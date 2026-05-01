@@ -3,6 +3,8 @@ name = "lakeshore-zonewriter"
 version = "0.1.0"
 description = "CLI for reading and writing Lake Shore 336 controller zone tables"
 readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 requires-python = ">=3.13"
 keywords = [
     "lake-shore",
@@ -15,6 +17,7 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: Console",
     "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",

@@ -13,16 +13,25 @@ The tool writes zone table data only. It does not change the controller output m
 Controller connections use a fixed 50 ms interval between requests and a 10 second
 PyVISA timeout.
 
-## Install
+## Install `lakeshore-zonewriter` as a CLI Tool using [uv](https://docs.astral.sh/uv/)
 
 ```bash
-uv sync
+uv tool install lakeshore-zonewriter
+```
+
+After installation, run the installed console script directly. For one-off use
+without installing, use `uvx lakeshore-zonewriter`.
+
+Check the installed CLI:
+
+```bash
+lakeshore-zonewriter --help
 ```
 
 ## List VISA Resources
 
 ```bash
-uv run lakeshore-zonewriter list-resources
+lakeshore-zonewriter list-resources
 ```
 
 ## Export Zones
@@ -30,7 +39,7 @@ uv run lakeshore-zonewriter list-resources
 Export prompts for Output 1 or 2 if `--output` is omitted.
 
 ```bash
-uv run lakeshore-zonewriter export --file zones.toml
+lakeshore-zonewriter export --file zones.toml
 ```
 
 If `--resource` is omitted, the CLI opens an interactive terminal dropdown of
@@ -38,7 +47,7 @@ detected PyVISA resources. In non-interactive shells it falls back to a numbered
 selection prompt. For scripts, pass both values explicitly:
 
 ```bash
-uv run lakeshore-zonewriter export --resource ASRL3::INSTR --output 1 --file zones.toml
+lakeshore-zonewriter export --resource ASRL3::INSTR --output 1 --file zones.toml
 ```
 
 ## Edit the TOML File
@@ -59,25 +68,25 @@ Valid `heater_range` values are `off`, `low`, `medium`, and `high`. Valid
 Validate without connecting to hardware:
 
 ```bash
-uv run lakeshore-zonewriter validate --file zones.toml
+lakeshore-zonewriter validate --file zones.toml
 ```
 
 Compare the controller to the file's `output`:
 
 ```bash
-uv run lakeshore-zonewriter diff --file zones.toml
+lakeshore-zonewriter diff --file zones.toml
 ```
 
 Preview writes without changing the controller:
 
 ```bash
-uv run lakeshore-zonewriter write --file zones.toml --dry-run
+lakeshore-zonewriter write --file zones.toml --dry-run
 ```
 
 Write zones from the file:
 
 ```bash
-uv run lakeshore-zonewriter write --file zones.toml
+lakeshore-zonewriter write --file zones.toml
 ```
 
 Before writing, the CLI exports a timestamped backup of the current controller zones
@@ -86,6 +95,59 @@ non-interactive runs.
 
 ## Test
 
+From a source checkout, install the project environment and run tests:
+
+```bash
+uv sync
+```
+
 ```bash
 uv run python -m unittest discover -s tests
 ```
+
+## Release
+
+Use `pyproject.toml` as the source of truth for the package version. Keep `CHANGELOG.md`
+updated by moving notable entries from `Unreleased` into the new version section.
+
+Release checklist:
+
+1. Choose the next semantic version.
+2. Update `CHANGELOG.md`, including the release date.
+3. Bump `version` in `pyproject.toml`.
+4. Run tests:
+
+   ```bash
+   uv run python -m unittest discover -s tests
+   ```
+
+5. Build the package:
+
+   ```bash
+   uv build
+   ```
+
+6. Commit the release and create a tag that matches the package version:
+
+   ```bash
+   git commit -am "Release X.Y.Z"
+   git tag vX.Y.Z
+   ```
+
+7. Push the commit and tag:
+
+   ```bash
+   git push origin main
+   git push origin vX.Y.Z
+   ```
+
+Pushing a `v*` tag runs the release workflow, which tests, builds, publishes to
+PyPI through trusted publishing, and creates a GitHub Release using the matching
+`CHANGELOG.md` section with the built distributions attached.
+
+PyPI publishing requires a trusted publisher for this repository, workflow
+`release.yml`, and environment `pypi`.
+
+## License
+
+Apache-2.0. See [LICENSE](LICENSE).

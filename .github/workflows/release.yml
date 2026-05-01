@@ -1,0 +1,93 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  FORCE_COLOR: 1
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Publish release
+    runs-on: ubuntu-latest
+    if: github.repository == 'kmnhan/lakeshore-zonewriter'
+    environment:
+      name: pypi
+      url: https://pypi.org/project/lakeshore-zonewriter/
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install Python
+        run: uv python install
+
+      - name: Prepare release notes
+        run: |
+          python_path="$(uv python find)"
+          "$python_path" - <<'PY'
+          import os
+          from pathlib import Path
+          import re
+          import tomllib
+
+          version = tomllib.loads(Path("pyproject.toml").read_text())["project"]["version"]
+          expected_tag = f"v{version}"
+          actual_tag = os.environ["GITHUB_REF_NAME"]
+          if actual_tag != expected_tag:
+              raise SystemExit(
+                  f"Tag {actual_tag!r} does not match pyproject.toml version {version!r}; "
+                  f"expected {expected_tag!r}."
+              )
+
+          changelog = Path("CHANGELOG.md").read_text()
+          heading = re.compile(
+              rf"^##\s+v?{re.escape(version)}(?:\s+-\s+.*)?\s*$",
+              re.MULTILINE,
+          )
+          match = heading.search(changelog)
+          if match is None:
+              raise SystemExit(f"CHANGELOG.md has no section for version {version!r}.")
+
+          next_heading = re.search(r"^##\s+", changelog[match.end() :], re.MULTILINE)
+          end = match.end() + next_heading.start() if next_heading else len(changelog)
+          release_notes = changelog[match.start() : end].strip() + "\n"
+          Path("release-notes.md").write_text(release_notes)
+          PY
+
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: Run tests
+        run: uv run --locked python -m unittest discover -s tests
+
+      - name: Build distributions
+        run: uv build
+
+      - name: Publish distributions to PyPI
+        run: uv publish --trusted-publishing always
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          body_path: release-notes.md
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
