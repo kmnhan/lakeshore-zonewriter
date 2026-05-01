@@ -150,7 +150,7 @@ class Zone(BaseModel):
     manual_output_percent: float = Field(ge=0, le=100)
     heater_range: str
     control_input: str
-    ramp_rate_k_per_min: float = Field(ge=0.1, le=100)
+    ramp_rate_k_per_min: float = Field(ge=0, le=100)
 
     @field_validator("heater_range", mode="before")
     @classmethod

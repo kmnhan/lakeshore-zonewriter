@@ -4,7 +4,13 @@ Notable changes to this project are documented here.
 
 This project follows semantic versioning while the public CLI and TOML schema settle.
 
-## 0.1.0 - 2026-05-01
+## v0.1.1 - 2026-05-01
+
+### Fixed
+
+- Allow 0 in ramp rate column
+
+## v0.1.0 - 2026-05-01
 
 ### Added
 

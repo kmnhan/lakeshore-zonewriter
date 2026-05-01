@@ -1,5 +1,11 @@
 # lakeshore-zonewriter
 
+[![Tests][tests-badge]][tests]
+[![PyPI][pypi-badge]][pypi]
+[![Python][python-badge]][pypi]
+[![License][license-badge]][license]
+[![uv][uv-badge]][uv]
+
 `lakeshore-zonewriter` reads and writes Lake Shore 336 controller zone tables using
 PyVISA. Zone files are TOML so they can be reviewed and edited by hand.
 
@@ -151,3 +157,13 @@ PyPI publishing requires a trusted publisher for this repository, workflow
 ## License
 
 Apache-2.0. See [LICENSE](LICENSE).
+
+[tests-badge]: https://img.shields.io/github/actions/workflow/status/kmnhan/lakeshore-zonewriter/tests.yml?branch=main&label=tests&style=flat-square
+[tests]: https://github.com/kmnhan/lakeshore-zonewriter/actions/workflows/tests.yml
+[pypi-badge]: https://img.shields.io/pypi/v/lakeshore-zonewriter?style=flat-square
+[pypi]: https://pypi.org/project/lakeshore-zonewriter/
+[python-badge]: https://img.shields.io/pypi/pyversions/lakeshore-zonewriter?style=flat-square
+[license-badge]: https://img.shields.io/pypi/l/lakeshore-zonewriter?style=flat-square
+[license]: LICENSE
+[uv-badge]: https://img.shields.io/badge/packaged%20with-uv-654ff0?style=flat-square
+[uv]: https://docs.astral.sh/uv/
