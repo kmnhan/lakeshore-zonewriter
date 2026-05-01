@@ -4,6 +4,13 @@ Notable changes to this project are documented here.
 
 This project follows semantic versioning while the public CLI and TOML schema settle.
 
+## v0.1.2 - 2026-05-01
+
+### Added
+
+- Configure Model 336 ASRL connections with the USB virtual serial defaults and
+  add `--baud-rate` for serial overrides.
+
 ## v0.1.1 - 2026-05-01
 
 ### Fixed

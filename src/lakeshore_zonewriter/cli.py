@@ -33,7 +33,6 @@ def main(
     stdin = stdin or sys.stdin
     stdout = stdout or sys.stdout
     stderr = stderr or sys.stderr
-    controller_factory = controller_factory or default_controller_factory
     resource_lister = resource_lister or list_resources
     now = now or datetime.now
 
@@ -41,12 +40,21 @@ def main(
     try:
         args = parser.parse_args(argv)
     except SystemExit as exc:
-        return int(exc.code)
+        return exc.code if isinstance(exc.code, int) else 1
+
+    active_controller_factory = controller_factory
+    if active_controller_factory is None:
+        baud_rate = getattr(args, "baud_rate", None)
+
+        def _default_factory(resource: str) -> Controller:
+            return default_controller_factory(resource, baud_rate=baud_rate)
+
+        active_controller_factory = _default_factory
 
     try:
         return args.func(
             args,
-            controller_factory=controller_factory,
+            controller_factory=active_controller_factory,
             resource_lister=resource_lister,
             stdin=stdin,
             stdout=stdout,
@@ -208,10 +216,18 @@ def add_connection_args(parser: argparse.ArgumentParser) -> None:
             "detected resources interactively."
         ),
     )
+    parser.add_argument(
+        "--baud-rate",
+        type=int,
+        help=(
+            "Serial baud rate for ASRL resources. Defaults to 57600 for the "
+            "Lake Shore 336 USB virtual serial port."
+        ),
+    )
 
 
-def default_controller_factory(resource: str) -> Controller:
-    transport = open_controller_transport(resource)
+def default_controller_factory(resource: str, *, baud_rate: int | None = None) -> Controller:
+    transport = open_controller_transport(resource, baud_rate=baud_rate)
     return Controller(transport)
 
 

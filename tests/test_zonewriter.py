@@ -8,6 +8,8 @@ from contextlib import redirect_stderr
 import unittest
 from unittest.mock import patch
 
+from pyvisa import constants
+
 from lakeshore_zonewriter.cli import main
 from lakeshore_zonewriter.controller import format_zone_command, parse_zone_response
 from lakeshore_zonewriter.models import ValidationError, Zone, ZoneTable
@@ -173,12 +175,12 @@ class ControllerCommandTests(unittest.TestCase):
 
 
 class TransportTests(unittest.TestCase):
-    def test_controller_transport_uses_fixed_interval_and_timeout(self) -> None:
+    def test_controller_transport_uses_336_serial_defaults(self) -> None:
         class FakeResourceManager:
             def __init__(self) -> None:
-                self.open_calls: list[tuple[str, dict[str, int]]] = []
+                self.open_calls: list[tuple[str, dict[str, object]]] = []
 
-            def open_resource(self, resource: str, **kwargs: int) -> object:
+            def open_resource(self, resource: str, **kwargs: object) -> object:
                 self.open_calls.append((resource, kwargs))
                 return object()
 
@@ -187,7 +189,66 @@ class TransportTests(unittest.TestCase):
             handler = open_controller_transport("ASRL3::INSTR")
 
         self.assertEqual(handler.interval_ms, 50)
-        self.assertEqual(manager.open_calls, [("ASRL3::INSTR", {"timeout": 10_000})])
+        self.assertEqual(
+            manager.open_calls,
+            [
+                (
+                    "ASRL3::INSTR",
+                    {
+                        "timeout": 10_000,
+                        "read_termination": "\r\n",
+                        "write_termination": "\r\n",
+                        "baud_rate": 57_600,
+                        "data_bits": 7,
+                        "parity": constants.Parity.odd,
+                        "stop_bits": constants.StopBits.one,
+                        "flow_control": constants.ControlFlow.none,
+                    },
+                )
+            ],
+        )
+
+    def test_controller_transport_allows_baud_rate_override(self) -> None:
+        class FakeResourceManager:
+            def __init__(self) -> None:
+                self.open_calls: list[tuple[str, dict[str, object]]] = []
+
+            def open_resource(self, resource: str, **kwargs: object) -> object:
+                self.open_calls.append((resource, kwargs))
+                return object()
+
+        manager = FakeResourceManager()
+        with patch("lakeshore_zonewriter.transport.pyvisa.ResourceManager", return_value=manager):
+            open_controller_transport("ASRL3::INSTR", baud_rate=9600)
+
+        self.assertEqual(manager.open_calls[0][1]["baud_rate"], 9600)
+
+    def test_controller_transport_skips_serial_settings_for_non_serial_resource(self) -> None:
+        class FakeResourceManager:
+            def __init__(self) -> None:
+                self.open_calls: list[tuple[str, dict[str, object]]] = []
+
+            def open_resource(self, resource: str, **kwargs: object) -> object:
+                self.open_calls.append((resource, kwargs))
+                return object()
+
+        manager = FakeResourceManager()
+        with patch("lakeshore_zonewriter.transport.pyvisa.ResourceManager", return_value=manager):
+            open_controller_transport("TCPIP0::192.0.2.10::7777::SOCKET")
+
+        self.assertEqual(
+            manager.open_calls,
+            [
+                (
+                    "TCPIP0::192.0.2.10::7777::SOCKET",
+                    {
+                        "timeout": 10_000,
+                        "read_termination": "\r\n",
+                        "write_termination": "\r\n",
+                    },
+                )
+            ],
+        )
 
 
 class CliTests(unittest.TestCase):
@@ -228,6 +289,40 @@ class CliTests(unittest.TestCase):
         self.assertEqual(exported.output, 1)
         self.assertEqual(factory.calls[0], "ASRL3::INSTR")
         self.assertIn("Select VISA resource", stdout.getvalue())
+
+    def test_export_passes_baud_rate_to_default_controller_factory(self) -> None:
+        class FakeTransport:
+            def query(self, command: str) -> str:
+                self.command = command
+                return "10,10,20,0,0,2,2,1\r\n"
+
+            def close(self) -> None:
+                self.closed = True
+
+        stdout = StringIO()
+        with TemporaryDirectory() as tmp:
+            path = Path(tmp) / "exported.toml"
+            with patch(
+                "lakeshore_zonewriter.cli.open_controller_transport",
+                return_value=FakeTransport(),
+            ) as open_transport:
+                code = main(
+                    [
+                        "export",
+                        "--resource",
+                        "ASRL3::INSTR",
+                        "--baud-rate",
+                        "9600",
+                        "--output",
+                        "1",
+                        "--file",
+                        str(path),
+                    ],
+                    stdout=stdout,
+                )
+
+        self.assertEqual(code, 0)
+        open_transport.assert_called_once_with("ASRL3::INSTR", baud_rate=9600)
 
     def test_missing_resource_errors_when_no_resources_detected(self) -> None:
         stdout = StringIO()

@@ -17,7 +17,9 @@ The CLI uses the controller commands documented for the Model 336:
 The tool writes zone table data only. It does not change the controller output mode.
 
 Controller connections use a fixed 50 ms interval between requests and a 10 second
-PyVISA timeout.
+PyVISA timeout. ASRL resources, including the Model 336 USB virtual serial port,
+default to 57,600 baud, 7 data bits, odd parity, 1 stop bit, no flow control, and
+CR/LF message termination.
 
 ## Install `lakeshore-zonewriter` as a CLI Tool using [uv](https://docs.astral.sh/uv/)
 
@@ -54,6 +56,12 @@ selection prompt. For scripts, pass both values explicitly:
 
 ```bash
 lakeshore-zonewriter export --resource ASRL3::INSTR --output 1 --file zones.toml
+```
+
+If a controller is configured differently, override the serial baud rate:
+
+```bash
+lakeshore-zonewriter export --resource ASRL3::INSTR --baud-rate 9600 --output 1 --file zones.toml
 ```
 
 ## Edit the TOML File
