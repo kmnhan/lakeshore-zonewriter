@@ -1,0 +1,19 @@
+# Lake Shore 336 zone table
+schema_version = 1
+model = "Lake Shore 336"
+output = 1
+
+# zones columns:
+# zone, upper_bound_k, p, i, d, manual_output_percent, heater_range, control_input, ramp_rate_k_per_min
+zones = [
+  [ 1,   4,  50, 50, 0, 0, "low"   , "A"      , 0.5],
+  [ 2,   7,  70, 40, 0, 0, "low"   , "A"      , 0.7],
+  [ 3,  10,  85, 35, 0, 0, "medium", "A"      , 0.9],
+  [ 4,  15,  85, 35, 0, 0, "medium", "B"      ,   2],
+  [ 5,  25, 100, 30, 0, 0, "medium", "B"      ,   5],
+  [ 6,  50, 150, 30, 0, 0, "medium", "B"      ,  10],
+  [ 7, 100, 185, 25, 0, 0, "medium", "B"      ,  20],
+  [ 8, 500, 200, 20, 0, 0, "high"  , "B"      ,  30],
+  [ 9,   0,  50, 20, 0, 0, "off"   , "default", 0.1],
+  [10,   0,  50, 20, 0, 0, "off"   , "default", 0.1],
+]
